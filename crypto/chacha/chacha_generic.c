@@ -21,7 +21,7 @@
 #include <openssl/cpu.h>
 
 
-#if defined(OPENSSL_WINDOWS) || (!defined(OPENSSL_X86_64) && !defined(OPENSSL_X86)) || !defined(__SSE2__)
+#if (!defined(OPENSSL_X86_64) && !defined(OPENSSL_X86)) || !defined(__SSE2__)
 
 /* sigma contains the ChaCha constants, which happen to be an ASCII string. */
 static const uint8_t sigma[16] = { 'e', 'x', 'p', 'a', 'n', 'd', ' ', '3',

@@ -18,6 +18,7 @@ endif()
 
 # minimal build without threading
 add_definitions(-DOPENSSL_NO_THREADS)
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3")
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Werror -ggdb -fvisibility=hidden")

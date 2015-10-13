@@ -26,7 +26,6 @@
 #include <openssl/chacha.h>
 
 #if defined(ASM_GEN) ||          \
-    !defined(OPENSSL_WINDOWS) && \
         (defined(OPENSSL_X86_64) || defined(OPENSSL_X86)) && defined(__SSE2__)
 
 #define CHACHA_RNDS 20 /* 8 (high speed), 20 (conservative), 12 (middle) */
