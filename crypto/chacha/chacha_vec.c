@@ -38,7 +38,7 @@ typedef unsigned vec __attribute__((vector_size(16)));
  * each architecture, using intrinsics.
  * This implementation supports parallel processing of multiple blocks,
  * including potentially using general-purpose registers. */
-#if __ARM_NEON__
+#if defined(__ARM_NEON__)
 #include <string.h>
 #include <arm_neon.h>
 #define GPR_TOO 1
@@ -141,7 +141,7 @@ typedef unsigned vec __attribute__((vector_size(16)));
 	STORE(op + d + 8, LOAD(in + d + 8) ^ REVV_BE(v2));      \
 	STORE(op + d +12, LOAD(in + d +12) ^ REVV_BE(v3));
 
-#if __ARM_NEON__
+#if defined(__ARM_NEON__)
 /* For ARM, we can't depend on NEON support, so this function is compiled with
  * a different name, along with the generic code, and can be enabled at
  * run-time. */
@@ -173,7 +173,7 @@ void CRYPTO_chacha_20(
 	s2 = LOAD(&((vec*)kp)[1]);
 	s3 = (vec){
 		counter & 0xffffffff,
-#if __ARM_NEON__ || defined(OPENSSL_X86)
+#if defined(__ARM_NEON__) || defined(OPENSSL_X86)
 		0,  /* can't right-shift 32 bits on a 32-bit system. */
 #else
 		counter >> 32,

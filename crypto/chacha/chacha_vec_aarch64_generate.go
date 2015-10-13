@@ -96,7 +96,7 @@ func main() {
 	}
 
 	if !attr28Handled {
-		panic("EABI attribute 28 not seen in processing")
+		//panic("EABI attribute 28 not seen in processing")
 	}
 
 	if err := cmd.Wait(); err != nil {
