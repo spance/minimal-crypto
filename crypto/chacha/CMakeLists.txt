@@ -1,6 +1,6 @@
 include_directories(../../include)
 
-if (${ARCH} STREQUAL "aarch64" OR ${ARCH} STREQUAL "arm")
+if (${ARCH} STREQUAL "arm")
   set(
     CHACHA_ARCH_SOURCES
 
@@ -15,6 +15,7 @@ add_library(
 
   chacha_generic.c
   chacha_vec.c
+  chacha_neon.c
 
   ${CHACHA_ARCH_SOURCES}
 )
