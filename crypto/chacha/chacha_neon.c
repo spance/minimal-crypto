@@ -22,9 +22,12 @@ typedef uint8x16_t vec8x16;
 #define ROTW12(x) vsriq_n_u32(vshlq_n_u32(x, 12), x, 20)
 
 #define ADDV(a, b) vaddq_u32(a, b)
-#define STOREV(a, b) vst1q_u32(a, b)
 #define XOR8x16(a, b) veorq_u8(a, b)
 #define STORE8x16(a, b) vst1q_u8(a, b)
+#define STOREV(s, o, a, b) \
+	vst1q_u32(s, b); \
+	vst1q_u32(o, a + b); \
+	o += 4;
 
 #define DQROUND_VECTORS(a,b,c,d)                \
     a += b; d ^= a; d = ROTW16(d);              \
@@ -43,19 +46,19 @@ OPENSSL_EXPORT void
 CRYPTO_neon_chacha_core(uint32_t *out, uint32_t *state, size_t len, size_t rounds)
 {
 	int i, j;
-	vec s0, s1, s2, s3, *vi = (vec*)state;
-	s0 = vi[0], s1 = vi[1], s2 = vi[2];
+	vec s0, s1, s2, s3, v0, v1, v2, v3, *vi = (vec*)state;
+	s0 = v0 = vi[0], s1 = v1 = vi[1], s2 = v2 = vi[2], s3 = v3 = vi[3];
 	for (j = len/64; j--; ) {
-		s3 = vi[3];
 		for (i = rounds/2; i--; ) {
-			DQROUND_VECTORS(s0,s1,s2,s3);
+			DQROUND_VECTORS(s0, s1, s2, s3);
 		}
-		STOREV(out, ADDV(vi[0], s0)); out+=4;
-		STOREV(out, ADDV(vi[1], s1)); out+=4;
-		STOREV(out, ADDV(vi[2], s2)); out+=4;
-		STOREV(out, ADDV(vi[3], s3)); out+=4;
-		if (++state[12]==0)
+		STOREV(state, out, v0, s0);
+		STOREV(state + 4, out, v1, s1);
+		STOREV(state + 8, out, v2, s2);
+		STOREV(state + 12, out, v3, s3);
+		if (++state[12] == 0)
 			state[13]++;
+		v0 = s0, v1 = s1, v2 = s2, s3 = v3 = vi[3];
 	}
 }
 
@@ -89,7 +92,7 @@ CRYPTO_neon_chacha_xor(chacha_state *state, uint8_t *in, uint8_t *out, size_t in
 		j += step;
 	
 		if (j == CHACHA_STREAM_SIZE) {
-			CRYPTO_neon_chacha_core(state->stream, state->state, state->rounds);
+			CRYPTO_neon_chacha_core(state->stream, state->state, CHACHA_STREAM_SIZE, state->rounds);
 			j = state->offset = 0;
 		} else {
 			state->offset = j;
