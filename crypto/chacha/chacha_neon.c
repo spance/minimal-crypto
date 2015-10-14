@@ -24,10 +24,8 @@ typedef uint8x16_t vec8x16;
 #define ADDV(a, b) vaddq_u32(a, b)
 #define XOR8x16(a, b) veorq_u8(a, b)
 #define STORE8x16(a, b) vst1q_u8(a, b)
-#define STOREV(s, o, a, b) \
-	vst1q_u32(s, b); \
-	vst1q_u32(o, a + b); \
-	o += 4;
+#define STOREV(o, a, b) \
+	vst1q_u32(o, a + b); o += 4;
 
 #define DQROUND_VECTORS(a,b,c,d)                \
     a += b; d ^= a; d = ROTW16(d);              \
@@ -52,13 +50,13 @@ CRYPTO_neon_chacha_core(uint32_t *out, uint32_t *state, size_t len, size_t round
 		for (i = rounds/2; i--; ) {
 			DQROUND_VECTORS(s0, s1, s2, s3);
 		}
-		STOREV(state, out, v0, s0);
-		STOREV(state + 4, out, v1, s1);
-		STOREV(state + 8, out, v2, s2);
-		STOREV(state + 12, out, v3, s3);
+		STOREV(out, v0, s0);
+		STOREV(out, v1, s1);
+		STOREV(out, v2, s2);
+		STOREV(out, v3, s3);
 		if (++state[12] == 0)
 			state[13]++;
-		v0 = s0, v1 = s1, v2 = s2, s3 = v3 = vi[3];
+		s0 = v0, s1 = v1, s2 = v2, s3 = v3 = vi[3];
 	}
 }
 
