@@ -39,63 +39,106 @@ typedef uint8x16_t vec8x16;
     c += d; b ^= c; b = ROTW7(b);               \
     b = ROTV3(b); c = ROTV2(c); d = ROTV1(d);           
 
+#define LOW64(v) vgetq_lane_u64((uint64x2_t)v, 0)
+#define STORE64(d, s) vst1_u32((uint32_t *)(d), (uint32x2_t)(s))
+#define INCRE64(d, v, m) STORE64(d, LOW64(v)+m)
 
 OPENSSL_EXPORT void
 CRYPTO_neon_chacha_core(uint32_t *out, uint32_t *state, size_t len, size_t rounds)
 {
-	int i, j;
-	vec s0, s1, s2, s3, v0, v1, v2, v3, *vi = (vec*)state;
-	s0 = v0 = vi[0], s1 = v1 = vi[1], s2 = v2 = vi[2], s3 = v3 = vi[3];
-	for (j = len/64; j--; ) {
-		for (i = rounds/2; i--; ) {
-			DQROUND_VECTORS(s0, s1, s2, s3);
-		}
-		STOREV(out, v0, s0);
-		STOREV(out, v1, s1);
-		STOREV(out, v2, s2);
-		STOREV(out, v3, s3);
-		if (++state[12] == 0)
-			state[13]++;
-		s0 = v0, s1 = v1, s2 = v2, s3 = v3 = vi[3];
-	}
+    int i, j;
+    vec s0, s1, s2, s3, s4, s5, s6, s7, s8, s9, sa, sb, sc, sd, se, sf, *vi = (vec *)state;
+    vec v0, v1, v2, v3 = vi[3], v4, v5, v6;
+    sc = s8 = s4 = s0 = v0 = vi[0],
+    sd = s9 = s5 = s1 = v1 = vi[1],
+    se = sa = s6 = s2 = v2 = vi[2],
+    v6 = v5 = v4 = s3 = v3;
+    INCRE64(&v4, v3, 1);
+    s7 = v4;
+    INCRE64(&v5, v3, 2);
+    sb = v5;
+    INCRE64(&v6, v3, 3);
+    sf = v6;
+    for (j = len / 256; j--; )
+    {
+        for (i = rounds / 2; i--; )
+        {
+            DQROUND_VECTORS(s0, s1, s2, s3);
+            DQROUND_VECTORS(s4, s5, s6, s7);
+            DQROUND_VECTORS(s8, s9, sa, sb);
+            DQROUND_VECTORS(sc, sd, se, sf);
+        }
+        STOREV(out, v0, s0);
+        STOREV(out, v1, s1);
+        STOREV(out, v2, s2);
+        STOREV(out, v3, s3);
+        STOREV(out, v0, s4);
+        STOREV(out, v1, s5);
+        STOREV(out, v2, s6);
+        STOREV(out, v4, s7);
+        STOREV(out, v0, s8);
+        STOREV(out, v1, s9);
+        STOREV(out, v2, sa);
+        STOREV(out, v5, sb);
+        STOREV(out, v0, sc);
+        STOREV(out, v1, sd);
+        STOREV(out, v2, se);
+        STOREV(out, v6, sf);
+        sc = s8 = s4 = s0 = v0, sd = s9 = s5 = s1 = v1, se = sa = s6 = s2 = v2;
+        INCRE64(&v3, v3, 4);
+        s3 = v3;
+        INCRE64(&v4, v4, 4);
+		s7 = v4;
+		INCRE64(&v5, v5, 4);
+		sb = v5;
+		INCRE64(&v6, v6, 4);
+		sf = v6;
+    }
+    STORE64(state + 12, LOW64(v3));
 }
 
-static inline void 
+static inline void
 fastXORBytes(uint8_t *dst, uint8_t *a, uint8_t *b, size_t rem)
 {
-	size_t n = rem/16;
-	vec8x16 *v1 = (vec8x16*)(a), *v2 = (vec8x16*)(b);
-	if (n > 0) {
-		rem -= n*16;
-		for (; n--; dst+=16) STORE8x16(dst, XOR8x16(*v1++, *v2++));
-	}
-	if (rem > 0) {
-		a = U8P(v1), b = U8P(v2);
-		while (rem--) *dst++ = *a++ ^ *b++;
-	}
+    size_t n = rem / 16;
+    vec8x16 *v1 = (vec8x16 *)(a), *v2 = (vec8x16 *)(b);
+    if (n > 0)
+    {
+        rem -= n * 16;
+        for (; n--; dst += 16) STORE8x16(dst, XOR8x16(*v1++, *v2++));
+    }
+    if (rem > 0)
+    {
+        a = U8P(v1), b = U8P(v2);
+        while (rem--) *dst++ = *a++ ^ *b++;
+    }
 }
 
 OPENSSL_EXPORT void
 CRYPTO_neon_chacha_xor(chacha_state *state, uint8_t *in, uint8_t *out, size_t inlen)
 {
-	size_t rem, step, j = state->offset;
-	while (inlen > 0) {
-		rem = CHACHA_STREAM_SIZE - j;
-		step = rem <= inlen ? rem : inlen;
-		inlen -= step;
-		
-		fastXORBytes(out, in, (uint8_t*)(state->stream) + j, step);
-		out += step;
-		in += step;
-		j += step;
-	
-		if (j == CHACHA_STREAM_SIZE) {
-			CRYPTO_neon_chacha_core(state->stream, state->state, CHACHA_STREAM_SIZE, state->rounds);
-			j = state->offset = 0;
-		} else {
-			state->offset = j;
-		}
-	}
+    size_t rem, step, j = state->offset;
+    while (inlen > 0)
+    {
+        rem = CHACHA_STREAM_SIZE - j;
+        step = rem <= inlen ? rem : inlen;
+        inlen -= step;
+
+        fastXORBytes(out, in, (uint8_t *)(state->stream) + j, step);
+        out += step;
+        in += step;
+        j += step;
+
+        if (j == CHACHA_STREAM_SIZE)
+        {
+            CRYPTO_neon_chacha_core(state->stream, state->state, CHACHA_STREAM_SIZE, state->rounds);
+            j = state->offset = 0;
+        }
+        else
+        {
+            state->offset = j;
+        }
+    }
 }
 
 #else

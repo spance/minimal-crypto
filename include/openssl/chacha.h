@@ -40,6 +40,9 @@ OPENSSL_EXPORT void CRYPTO_chacha_20(uint8_t *out, const uint8_t *in,
 OPENSSL_EXPORT void
 CRYPTO_chacha_init(uint32_t *state, uint8_t *key, uint8_t *iv) ;
 
+/**
+ * Only allow [len] >= 256byte and must have 0=len(mod 64)
+ **/
 OPENSSL_EXPORT void
 CRYPTO_neon_chacha_core(uint32_t *keystream, uint32_t *state, size_t len, size_t rounds);
 
