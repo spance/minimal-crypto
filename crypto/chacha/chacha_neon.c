@@ -48,11 +48,11 @@ CRYPTO_neon_chacha_core(uint32_t *out, uint32_t *state, size_t len, size_t round
 {
     int i, j;
     vec s0, s1, s2, s3, s4, s5, s6, s7, s8, s9, sa, sb, sc, sd, se, sf, *vi = (vec *)state;
-    vec v0, v1, v2, v3 = vi[3], v4, v5, v6;
+    vec v0, v1, v2, v3, v4, v5, v6;
     sc = s8 = s4 = s0 = v0 = vi[0],
     sd = s9 = s5 = s1 = v1 = vi[1],
     se = sa = s6 = s2 = v2 = vi[2],
-    v6 = v5 = v4 = s3 = v3;
+    v6 = v5 = v4 = s3 = v3 = vi[3];
     INCRE64(&v4, v3, 1);
     s7 = v4;
     INCRE64(&v5, v3, 2);
