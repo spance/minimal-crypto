@@ -164,6 +164,7 @@ void OPENSSL_cpuid_setup(void) {
   static const unsigned long kPMULL = 1 << 4;
   static const unsigned long kSHA1 = 1 << 5;
   static const unsigned long kSHA256 = 1 << 6;
+  static const unsigned long kCRC32 = 1 << 7; // HWCAP_CRC32
 
   if ((hwcap & kNEON) == 0) {
     return;
@@ -183,6 +184,9 @@ void OPENSSL_cpuid_setup(void) {
   }
   if (hwcap & kSHA256) {
     OPENSSL_armcap_P |= ARMV8_SHA256;
+  }
+  if (hwcap & kCRC32) {
+    OPENSSL_armcap_P |= ARMV8_CRC32;
   }
 }
 
